@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Công cụ KD Study Web - Tính GPA Tự Động</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #f0f2f5; color: #333; font-size: 14px;}
+        
+        .container { width: 100%; box-sizing: border-box; max-width: 1400px; margin: 0 auto;}
+        .header-title { text-align: left; color: #007BFF; margin-bottom: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding-left: 10px; font-size: 1.6em;}
+        
+        .layout-wrapper { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+        .layout-left { flex: 6.5; min-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .layout-right { flex: 3.5; min-width: 320px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 15px; }
+        
+        h2 { border-bottom: 3px solid #007BFF; padding-bottom: 5px; color: #2c3e50; font-size: 1.15em; margin-top: 0; margin-bottom: 15px;}
+        
+        .heading-inline { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #007BFF; padding-bottom: 5px; margin-top: 15px; margin-bottom: 15px; }
+        .heading-inline h2 { border: none; padding: 0; margin: 0; }
+        
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.9em; color: #444; }
+        .input-box { padding: 8px 10px; width: 100%; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px; transition: border-color 0.2s; font-size: 0.95em;}
+        .input-box:focus { border-color: #80bdff; outline: none; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        
+        .upload-box { background: #eaf4ff; padding: 6px 12px; border: 1px dashed #007BFF; border-radius: 4px; text-align: center; transition: background 0.3s; }
+        .upload-box:hover { background: #dceeff; }
+        .upload-box input[type="file"] { display: none; }
+        .upload-label { cursor: pointer; color: #0056b3; font-weight: bold; font-size: 0.9em; }
+
+        /* Tối ưu bảng cuộn (Scrollable Tables) */
+        .table-section { margin-bottom: 20px; }
+        .section-heading { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4px; border-bottom: 2px solid; margin-bottom: 8px; }
+        .heading-co-diem { border-color: #28a745; color: #28a745; }
+        .heading-chua-co { border-color: #f39c12; color: #f39c12; }
+        
+        .table-container { max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background-color: #f8f9fa; color: #333; padding: 10px; border-bottom: 2px solid #dee2e6; text-align: center; font-size: 0.9em; position: sticky; top: 0; z-index: 1;}
+        td { border-bottom: 1px solid #eee; padding: 0; }
+        td input { border: none; padding: 10px 8px; width: 100%; box-sizing: border-box; outline: none; text-align: center; font-size: 0.95em; background: transparent; transition: background 0.2s;}
+        td input:focus { background-color: #f1f8ff; } 
+        td input::placeholder { color: #bbb; }
+        
+        .btn-delete { background-color: #ff4d4f; color: white; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; width: 80%; margin: 4px auto; display: block; transition: background 0.2s; }
+        .btn-delete:hover { background-color: #cf1322; }
+        
+        .btn-add { background: transparent; border: 1px dashed #ccc; width: 100%; padding: 8px; border-radius: 4px; cursor: pointer; color: #777; font-weight: bold; margin-top: 8px; transition: 0.2s; font-size: 0.85em;}
+        .btn-add:hover { border-color: #007BFF; color: #007BFF; background: #f8fbff; }
+
+        /* Styles cho Lộ trình cải thiện (Right Column) */
+        .ct-container { max-height: 500px; overflow-y: auto; padding-right: 5px;}
+        .ct-container::-webkit-scrollbar { width: 5px; }
+        .ct-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+        .group-cai-thien { margin-bottom: 15px; }
+        .group-title { font-size: 0.9em; font-weight: 800; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase;}
+        .title-rot { background: #ffebeb; color: #dc3545; border-left: 4px solid #dc3545; }
+        .title-d { background: #fff4e5; color: #d35400; border-left: 4px solid #e67e22; }
+        .title-c { background: #eaf4ff; color: #0056b3; border-left: 4px solid #0056b3; }
+
+        .cai-thien-item { background: #fff; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e8e8e8; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
+        .cai-thien-item label { margin: 0; font-weight: 600; cursor: pointer; display: flex; gap: 8px; align-items: flex-start; color: #333; font-size: 0.9em;}
+        .cai-thien-item select { margin-top: 8px; padding: 5px 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; font-weight: 600; color: #0056b3; font-size: 0.9em;}
+        .empty-msg { font-style: italic; color: #888; text-align: center; padding: 15px 0; border: 1px dashed #ccc; border-radius: 4px; font-size: 0.9em;}
+
+        /* Khối Kết luận & Thống kê Badge */
+        .conclusion-box { margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid #007BFF; }
+        .conclusion-title { margin-top: 0; color: #007BFF; font-size: 1.25em; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
+        .kl-item { margin-bottom: 12px; font-size: 1.05em; line-height: 1.5; color: #444; }
+        .kl-label { font-weight: 800; color: #2c3e50; font-size: 1em; display: inline-block; width: 190px;}
+        
+        .gpa-high { color: #28a745; font-weight: bold; }
+        .gpa-low { color: #dc3545; font-weight: bold; }
+        .highlight-text { background: #eaf4ff; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #0056b3;}
+
+        .stat-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;}
+        .badge { padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
+        .badge-a { background: #28a745; }
+        .badge-b { background: #17a2b8; }
+        .badge-c { background: #ffc107; color: #333; }
+        .badge-d { background: #fd7e14; }
+        .badge-f { background: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="header-title">Hệ Thống Hoạch Định GPA Chuyên Sâu</h1>
+
+    <div class="layout-wrapper">
+        <!-- CỘT TRÁI -->
+        <div class="layout-left">
+            <h2>1. THIẾT LẬP MỤC TIÊU</h2>
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Tổng TC bắt buộc của ngành:</label>
+                    <input type="number" class="input-box" id="tongTCToiThieu" placeholder="VD: 136" oninput="tinhToanAll()">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>GPA mục tiêu cần đạt (3.0 - 4.0):</label>
+                    <input type="number" class="input-box" step="0.01" id="gpaMucTieu" placeholder="VD: 3.20" oninput="tinhToanAll()">
+                </div>
+            </div>
+
+            <div class="heading-inline">
+                <h2>2. BẢNG ĐIỂM TÍCH LŨY</h2>
+                <div class="upload-box">
+                    <label for="uploadExcel" class="upload-label">📁 Tải file Excel</label>
+                    <input type="file" id="uploadExcel" accept=".xlsx, .xls, .csv" onchange="docFileExcel(event)">
+                </div>
+            </div>
+
+            <!-- BẢNG 1: CÁC MÔN ĐÃ CÓ ĐIỂM -->
+            <div class="table-section">
+                <div class="section-heading heading-co-diem">
+                    <h3 style="margin: 0; font-size: 1em;">✅ CÁC MÔN ĐÃ CÓ ĐIỂM (Tính vào GPA)</h3>
+                </div>
+                <div class="table-container">
+                    <table id="bangDiemCo">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">Tên môn học</th>
+                                <th style="width: 18%;">Số TC</th>
+                                <th style="width: 18%;">Điểm (Hệ 4)</th>
+                                <th style="width: 14%;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyCoDiem"></tbody>
+                    </table>
+                </div>
+                <button class="btn-add" onclick="taoDongMoi('CoDiem')">+ Thêm môn có điểm</button>
+            </div>
+
+            <!-- BẢNG 2: CÁC MÔN CHƯA CÓ ĐIỂM -->
+            <div class="table-section" style="margin-bottom: 0;">
+                <div class="section-heading heading-chua-co">
+                    <h3 style="margin: 0; font-size: 1em;">⏳ CÁC MÔN CHƯA CÓ ĐIỂM (Đang học / Dự kiến)</h3>
+                </div>
+                <div class="table-container">
+                    <table id="bangDiemChuaCo">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">Tên môn học</th>
+                                <th style="width: 18%;">Số TC</th>
+                                <th style="width: 18%;">Trạng thái</th>
+                                <th style="width: 14%;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyChuaCoDiem"></tbody>
+                    </table>
+                </div>
+                <button class="btn-add" onclick="taoDongMoi('ChuaCoDiem')">+ Thêm môn chưa có điểm</button>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI -->
+        <div class="layout-right">
+            <h2>3. LỘ TRÌNH CẢI THIỆN</h2>
+            <p style="font-size: 0.85em; color: #666; margin-top: -10px; margin-bottom: 15px;">Dữ liệu đã được gộp lấy điểm cao nhất và phân loại theo mức độ ưu tiên.</p>
+            
+            <div class="ct-container" id="danhSachCaiThien">
+                <div class="empty-msg">Chưa có môn nào cần cải thiện/học lại.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHỐI KẾT LUẬN -->
+    <div class="conclusion-box">
+        <h3 class="conclusion-title">📊 BÁO CÁO TỔNG QUAN</h3>
+        
+        <div class="kl-item" id="kl-hientai">
+            <span class="kl-label">📌 Tình trạng hiện tại:</span> 
+            <span>Chưa có dữ liệu tính toán.</span>
+        </div>
+        
+        <div class="kl-item" id="kl-muctieu">
+            <span class="kl-label">🎯 Lộ trình mục tiêu:</span> 
+            <span>Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1.</span>
+        </div>
+        
+        <div class="kl-item" id="kl-caithien">
+            <span class="kl-label">📈 Sau khi học cải thiện:</span> 
+            <span>Chưa chọn môn cải thiện nào.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() { 
+        taoDongMoi('CoDiem'); 
+        taoDongMoi('ChuaCoDiem'); 
+    };
+
+    function taoDongMoi(tableType, ten = "", tc = "", diem = "") {
+        let tbodyId = tableType === 'ChuaCoDiem' ? 'tbodyChuaCoDiem' : 'tbodyCoDiem';
+        let tbody = document.getElementById(tbodyId);
+        let tr = document.createElement("tr");
+        tr.dataset.id = "mon_" + Date.now().toString() + Math.floor(Math.random() * 1000); 
+
+        let placeholderDiem = tableType === 'ChuaCoDiem' ? "Đang học" : "Điểm";
+        let inputDiem = tableType === 'ChuaCoDiem' ? `value="" disabled title="Nhập điểm ở bảng trên"` : `value="${diem}" min="0" max="4" step="0.1"`;
+
+        tr.innerHTML = `
+            <td><input type="text" class="tenMon" oninput="kiemTraVaTinhToan(this)" placeholder="Tên môn..." value="${ten}"></td>
+            <td><input type="number" class="tinChi" min="1" oninput="kiemTraVaTinhToan(this)" placeholder="TC" value="${tc}"></td>
+            <td><input type="number" class="diem4" oninput="kiemTraVaTinhToan(this)" placeholder="${placeholderDiem}" ${inputDiem}></td>
+            <td><button class="btn-delete" onclick="xoaDong(this)">Xóa</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function taoKeyChuan(str) {
+        if (!str) return "";
+        return str.replace(/\(.*?\)/g, '') 
+                  .normalize('NFD') 
+                  .replace(/[\u0300-\u036f]/g, '') 
+                  .replace(/đ/g, 'd').replace(/Đ/g, 'd')
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, ''); 
+    }
+
+    function docFileExcel(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let data = new Uint8Array(e.target.result);
+            let workbook = XLSX.read(data, {type: 'array'});
+            let worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+            document.getElementById("tbodyCoDiem").innerHTML = ""; 
+            document.getElementById("tbodyChuaCoDiem").innerHTML = ""; 
+
+            let colTen = 3, colTC = 4, colDiem = 6;
+            for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
+                let r = jsonData[i];
+                if (r && r.includes("Tên môn học") && r.includes("Số tín chỉ")) {
+                    colTen = r.indexOf("Tên môn học");
+                    colTC = r.indexOf("Số tín chỉ");
+                    let findDiem = r.indexOf("Điểm TK (4)");
+                    if(findDiem !== -1) colDiem = findDiem;
+                    break;
+                }
+            }
+
+            let courseMapExcel = {};
+            let listChuaCo = [];
+
+            for (let i = 0; i < jsonData.length; i++) {
+                let row = jsonData[i];
+                if (!row || row.length === 0) continue;
+
+                let tenMon = row[colTen];
+                let tinChi = parseFloat(row[colTC]);
+                let diem = parseFloat(row[colDiem]);
+
+                if (tenMon && typeof tenMon === 'string' && tenMon !== "Tên môn học" && !isNaN(tinChi) && tinChi > 0) {
+                    let tenKey = taoKeyChuan(tenMon);
+                    
+                    if (isNaN(diem) || row[colDiem] === "" || row[colDiem] === undefined) {
+                        listChuaCo.push({ ten: tenMon, tc: tinChi });
+                    } else {
+                        if (!courseMapExcel[tenKey]) {
+                            courseMapExcel[tenKey] = { ten: tenMon, tc: tinChi, diem: diem };
+                        } else {
+                            if (diem > courseMapExcel[tenKey].diem) {
+                                courseMapExcel[tenKey].diem = diem;
+                                courseMapExcel[tenKey].ten = tenMon; 
+                            }
+                        }
+                    }
+                }
+            }
+            
+            for (let key in courseMapExcel) {
+                let mon = courseMapExcel[key];
+                taoDongMoi('CoDiem', mon.ten, mon.tc, mon.diem);
+            }
+            listChuaCo.forEach(mon => {
+                taoDongMoi('ChuaCoDiem', mon.ten, mon.tc, "");
+            });
+            
+            taoDongMoi('CoDiem');
+            taoDongMoi('ChuaCoDiem');
+            
+            tinhToanAll();
+            document.getElementById("uploadExcel").value = "";
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function kiemTraVaTinhToan(inputElement) {
+        let tr = inputElement.closest("tr");
+        let tbody = tr.parentElement;
+        let tableType = tbody.id === 'tbodyCoDiem' ? 'CoDiem' : 'ChuaCoDiem';
+
+        if (tr === tbody.lastElementChild) {
+            let ten = tr.querySelector('.tenMon').value;
+            let tc = tr.querySelector('.tinChi').value;
+            let diem = tr.querySelector('.diem4').value;
+            if (ten !== "" || tc !== "" || diem !== "") {
+                taoDongMoi(tableType);
+            }
+        }
+        tinhToanAll();
+    }
+
+    function xoaDong(btn) {
+        let tr = btn.closest("tr");
+        let tbody = tr.parentElement;
+        let tableType = tbody.id === 'tbodyCoDiem' ? 'CoDiem' : 'ChuaCoDiem';
+        tr.remove();
+
+        if (tbody.children.length === 0) {
+            taoDongMoi(tableType);
+        } else {
+            let lastRow = tbody.lastElementChild;
+            let ten = lastRow.querySelector('.tenMon').value;
+            let tc = lastRow.querySelector('.tinChi').value;
+            let diem = lastRow.querySelector('.diem4').value;
+            if (ten !== "" || tc !== "" || diem !== "") {
+                taoDongMoi(tableType);
+            }
+        }
+        tinhToanAll();
+    }
+
+    function tinhToanAll() {
+        let tbodyCo = document.getElementById("tbodyCoDiem");
+        let tbodyChua = document.getElementById("tbodyChuaCoDiem");
+        let rows = [...tbodyCo.querySelectorAll("tr"), ...tbodyChua.querySelectorAll("tr")];
+        
+        let courseMap = {};
+        let tuKhoaBoQua = ["caulong", "quocphong", "anninh", "thechat", "bongchuyen", "bongda", "boiloi", "dienkinh", "vothuat", "gdqp"];
+
+        rows.forEach((row) => {
+            let tenGoc = row.querySelector('.tenMon').value;
+            let tc = parseFloat(row.querySelector('.tinChi').value);
+            let diemInput = row.querySelector('.diem4').value.trim();
+            let diem = parseFloat(diemInput);
+            let id = row.dataset.id;
+
+            if (tenGoc.trim() !== "" && !isNaN(tc) && tc > 0 && diemInput !== "" && !isNaN(diem) && diem >= 0 && diem <= 4) {
+                let tenKey = taoKeyChuan(tenGoc);
+                let isExcluded = tuKhoaBoQua.some(word => tenKey.includes(word));
+                
+                if (!isExcluded) {
+                    if (!courseMap[tenKey]) {
+                        courseMap[tenKey] = { id: id, ten: tenGoc, tc: tc, maxDiem: diem };
+                    } else {
+                        if (diem > courseMap[tenKey].maxDiem) {
+                            courseMap[tenKey].maxDiem = diem;
+                            courseMap[tenKey].id = id; 
+                            courseMap[tenKey].ten = tenGoc; 
+                        }
+                    }
+                }
+            }
+        });
+
+        let tongTC = 0;
+        let tongDiem = 0;
+        let dsCaiThien = [];
+        
+        // Biến đếm tổng kết môn A B C D F
+        let countA = 0, countB = 0, countC = 0, countD = 0, countF = 0;
+
+        for (let key in courseMap) {
+            let mon = courseMap[key];
+            if (mon.maxDiem >= 0) {
+                // Thống kê điểm (Áp dụng theo khung chuẩn 4.0 thông dụng)
+                if (mon.maxDiem >= 4.0) countA++;
+                else if (mon.maxDiem >= 3.0) countB++;
+                else if (mon.maxDiem >= 2.0) countC++;
+                else if (mon.maxDiem >= 1.0) countD++;
+                else countF++;
+
+                if (mon.maxDiem > 0) {
+                    tongTC += mon.tc;
+                    tongDiem += (mon.maxDiem * mon.tc);
+                }
+                
+                // Môn gợi ý cải thiện <= 2.5
+                if (mon.maxDiem <= 2.5) {
+                    dsCaiThien.push({ id: mon.id, ten: mon.ten, tc: mon.tc, diem: mon.maxDiem });
+                }
+            }
+        }
+
+        let gpaHienTai = tongTC > 0 ? (tongDiem / tongTC) : 0;
+        
+        // Render khối Báo cáo Hiện tại kèm Thống kê Badge
+        document.getElementById("kl-hientai").innerHTML = `
+            <div style="display:flex; align-items:flex-start;">
+                <span class="kl-label">📌 Tình trạng hiện tại:</span> 
+                <div>
+                    Đã tích lũy được <span class="highlight-text">${tongTC} TC</span> với mức GPA là <span class="${gpaHienTai >= 3.0 ? 'gpa-high' : 'gpa-low'}" style="font-size:1.1em;">${gpaHienTai.toFixed(2)}</span>
+                    <div class="stat-badges">
+                        <span class="badge badge-a" title="Điểm A (4.0)">A: ${countA}</span>
+                        <span class="badge badge-b" title="Điểm B (3.0 - 3.9)">B: ${countB}</span>
+                        <span class="badge badge-c" title="Điểm C (2.0 - 2.9)">C: ${countC}</span>
+                        <span class="badge badge-d" title="Điểm D (1.0 - 1.9)">D: ${countD}</span>
+                        <span class="badge badge-f" title="Điểm F (< 1.0)">F (Rớt): ${countF}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Tính Toán Mục Tiêu
+        let tongTCToiThieu = parseFloat(document.getElementById("tongTCToiThieu").value);
+        let gpaMucTieu = parseFloat(document.getElementById("gpaMucTieu").value);
+        let klMucTieu = document.getElementById("kl-muctieu");
+
+        if (!isNaN(tongTCToiThieu) && !isNaN(gpaMucTieu) && tongTCToiThieu > 0) {
+            let tcConLai = tongTCToiThieu - tongTC;
+            if (tcConLai <= 0) {
+                klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> <span class="gpa-high">Tuyệt vời! Bạn đã tích lũy đủ số tín chỉ của chương trình.</span>`;
+            } else {
+                let diemCanDat = (gpaMucTieu * tongTCToiThieu) - (gpaHienTai * tongTC);
+                let tcA = diemCanDat - (3 * tcConLai);
+                let tcB = tcConLai - tcA;
+
+                if (tcA > tcConLai) {
+                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> <span class='gpa-low'>Bất khả thi!</span> Dù ${tcConLai} TC còn lại đạt toàn điểm A (4.0) cũng không chạm mốc GPA ${gpaMucTieu}.`;
+                } else if (tcB > tcConLai) {
+                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Rất an toàn! Bạn không nhất thiết phải đạt toàn A hay B trong ${tcConLai} TC còn lại để duy trì GPA ${gpaMucTieu}.`;
+                } else {
+                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Để đạt GPA <b>${gpaMucTieu}</b>, trong <b>${tcConLai}</b> TC còn lại, tối thiểu cần: <span class="highlight-text">${Math.ceil(Math.max(0, tcA))} TC điểm A</span> và <span class="highlight-text">${Math.floor(Math.max(0, tcB))} TC điểm B</span>.`;
+                }
+            }
+        } else {
+            klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1 để xem chi tiết.`;
+        }
+
+        // ================= XỬ LÝ LỘ TRÌNH CẢI THIỆN =================
+        let containerCT = document.getElementById("danhSachCaiThien");
+        let trangThaiHienTai = {};
+        
+        document.querySelectorAll(".check-cai-thien").forEach(cb => {
+            let selectElement = document.querySelector(`.select-cai-thien[data-id="${cb.dataset.id}"]`);
+            trangThaiHienTai[cb.dataset.id] = {
+                checked: cb.checked,
+                diemDuKien: selectElement ? selectElement.value : "4"
+            };
+        });
+
+        let dsRot = dsCaiThien.filter(m => m.diem === 0);
+        let dsD = dsCaiThien.filter(m => m.diem > 0 && m.diem < 2.0);
+        let dsC = dsCaiThien.filter(m => m.diem >= 2.0);
+
+        let htmlOutput = "";
+        
+        function renderGroup(danhSach, titleClass, titleText) {
+            if(danhSach.length === 0) return "";
+            let html = `<div class="group-cai-thien"><div class="group-title ${titleClass}">${titleText}</div>`;
+            danhSach.forEach(mon => {
+                let isChecked = trangThaiHienTai[mon.id] && trangThaiHienTai[mon.id].checked ? "checked" : "";
+                let selectedVal = trangThaiHienTai[mon.id] ? trangThaiHienTai[mon.id].diemDuKien : "4";
+                let labelDiem = mon.diem === 0 ? `<span style="color:#dc3545; font-weight:800;">[RỚT]</span>` : `Cao nhất: <b>${mon.diem}</b>`;
+                
+                html += `
+                    <div class="cai-thien-item">
+                        <label>
+                            <input type="checkbox" class="check-cai-thien" data-id="${mon.id}" onchange="tinhToanAll()" ${isChecked} style="margin-top: 2px;">
+                            <div>${mon.ten} <br><small style="color:#777; font-weight: normal;">(${labelDiem} | ${mon.tc} TC)</small></div>
+                        </label>
+                        <select class="select-cai-thien" data-id="${mon.id}" onchange="tinhToanAll()">
+                            <option value="4" ${selectedVal === "4" ? "selected" : ""}>Kỳ vọng: A (4.0)</option>
+                            <option value="3.5" ${selectedVal === "3.5" ? "selected" : ""}>Kỳ vọng: B+ (3.5)</option>
+                            <option value="3" ${selectedVal === "3" ? "selected" : ""}>Kỳ vọng: B (3.0)</option>
+                            <option value="2.5" ${selectedVal === "2.5" ? "selected" : ""}>Kỳ vọng: C+ (2.5)</option>
+                        </select>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        if (dsCaiThien.length === 0) {
+            htmlOutput = '<div class="empty-msg">Tuyệt vời! Chưa có môn nào cần cải thiện hay học lại.</div>';
+        } else {
+            htmlOutput += renderGroup(dsRot, 'title-rot', '❌ Môn Rớt (Điểm F / 0)');
+            htmlOutput += renderGroup(dsD, 'title-d', '⚠️ Môn Điểm D (Dưới 2.0)');
+            htmlOutput += renderGroup(dsC, 'title-c', '🔄 Môn Điểm C (Từ 2.0 trở lên)');
+        }
+        
+        containerCT.innerHTML = htmlOutput;
+
+        // Tính Toán Lộ Trình Cải Thiện
+        let klCaiThien = document.getElementById("kl-caithien");
+        let diemChenhLechTong = 0;
+        let tcChenhLechTong = 0;
+        let coChonCaiThien = false;
+        let loiDiemNhoHon = false;
+
+        document.querySelectorAll(".check-cai-thien:checked").forEach(cb => {
+            coChonCaiThien = true;
+            let id = cb.dataset.id;
+            let monChon = dsCaiThien.find(m => m.id === id);
+            let selectElement = document.querySelector(`.select-cai-thien[data-id="${id}"]`);
+            let diemDuKien = parseFloat(selectElement.value);
+
+            if (diemDuKien <= monChon.diem) {
+                loiDiemNhoHon = true;
+            } else {
+                if (monChon.diem === 0) {
+                    tcChenhLechTong += monChon.tc;
+                    diemChenhLechTong += (diemDuKien * monChon.tc);
+                } else {
+                    diemChenhLechTong += (diemDuKien - monChon.diem) * monChon.tc;
+                }
+            }
+        });
+
+        if (loiDiemNhoHon) {
+            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> <span class='gpa-low'>Lỗi! Điểm kỳ vọng phải cao hơn điểm đang có.</span>`;
+        } else if (coChonCaiThien && (tongTC + tcChenhLechTong) > 0) {
+            let gpaDuKien = (tongDiem + diemChenhLechTong) / (tongTC + tcChenhLechTong);
+            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> Nếu đạt kỳ vọng, GPA tổng sẽ nâng lên thành <span class="highlight-text gpa-high" style="font-size:1.1em;">${gpaDuKien.toFixed(2)}</span>`;
+        } else {
+            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> Tích chọn các môn ở cột phải để mô phỏng sự thăng tiến của GPA.`;
+        }
+    }
+</script>
+
+</body>
+</html>
