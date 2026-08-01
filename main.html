@@ -2,115 +2,238 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Công cụ KD Study Web - Tính GPA Tự Động</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Hoạch Định GPA Chuyên Sâu</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #f0f2f5; color: #333; font-size: 14px;}
+        :root {
+        color-scheme: light;     /* Thêm dòng này: Ép trình duyệt dùng con trỏ chuột hệ Sáng (màu đen) */
+            --primary: #4f46e5;      /* Indigo 600 */
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --bg-body: #f8fafc;      /* Slate 50 */
+            --bg-card: #ffffff;
+            --text-main: #1e293b;    /* Slate 800 */
+            --text-muted: #64748b;   /* Slate 500 */
+            --border-color: #e2e8f0; /* Slate 200 */
+            --success: #16a34a;      /* Green 600 */
+            --success-light: #dcfce7;
+            --warning: #ea580c;      /* Orange 600 */
+            --warning-light: #ffedd5;
+            --danger: #ef4444;       /* Red 500 */
+            --danger-light: #fee2e2;
+            --info: #0ea5e9;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 20px 15px; 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-size: 14px;
+            line-height: 1.5;
+        }
         
         .container { width: 100%; box-sizing: border-box; max-width: 1400px; margin: 0 auto;}
-        .header-title { text-align: left; color: #007BFF; margin-bottom: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding-left: 10px; font-size: 1.6em;}
         
-        .layout-wrapper { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-        .layout-left { flex: 6.5; min-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .layout-right { flex: 3.5; min-width: 320px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 15px; }
+        .header-title { 
+            text-align: left; 
+            color: var(--text-main); 
+            margin-bottom: 25px; 
+            font-weight: 800; 
+            letter-spacing: -0.5px; 
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-title::before {
+            content: ''; display: block; width: 6px; height: 32px; background: var(--primary); border-radius: 4px;
+        }
         
-        h2 { border-bottom: 3px solid #007BFF; padding-bottom: 5px; color: #2c3e50; font-size: 1.15em; margin-top: 0; margin-bottom: 15px;}
+        .layout-wrapper { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        .layout-left { flex: 6.5; min-width: 500px; background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--border-color);}
+        .layout-right { flex: 3.5; min-width: 320px; background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); position: sticky; top: 20px; border: 1px solid var(--border-color);}
         
-        .heading-inline { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #007BFF; padding-bottom: 5px; margin-top: 15px; margin-bottom: 15px; }
+        h2 { 
+            font-size: 1.1em; 
+            margin-top: 0; 
+            margin-bottom: 16px;
+            color: var(--text-main);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .heading-inline { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 16px; padding-top: 20px; border-top: 1px solid var(--border-color);}
         .heading-inline h2 { border: none; padding: 0; margin: 0; }
         
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.9em; color: #444; }
-        .input-box { padding: 8px 10px; width: 100%; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px; transition: border-color 0.2s; font-size: 0.95em;}
-        .input-box:focus { border-color: #80bdff; outline: none; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9em; color: var(--text-muted); }
+        .input-box { 
+            padding: 10px 12px; width: 100%; box-sizing: border-box; 
+            border: 1px solid var(--border-color); border-radius: var(--radius-md); 
+            transition: all 0.2s; font-size: 0.95em; color: var(--text-main);
+            background-color: #fff;
+        }
+        .input-box:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px var(--primary-light); }
         
-        .upload-box { background: #eaf4ff; padding: 6px 12px; border: 1px dashed #007BFF; border-radius: 4px; text-align: center; transition: background 0.3s; }
-        .upload-box:hover { background: #dceeff; }
+        .upload-box { 
+            background: var(--bg-body); padding: 8px 16px; 
+            border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); 
+            text-align: center; transition: all 0.2s; 
+        }
+        .upload-box:hover { background: var(--primary-light); border-color: var(--primary); }
         .upload-box input[type="file"] { display: none; }
-        .upload-label { cursor: pointer; color: #0056b3; font-weight: bold; font-size: 0.9em; }
+        .upload-label { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 0.9em; display: block;}
 
-        /* Tối ưu bảng cuộn (Scrollable Tables) */
-        .table-section { margin-bottom: 20px; }
-        .section-heading { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4px; border-bottom: 2px solid; margin-bottom: 8px; }
-        .heading-co-diem { border-color: #28a745; color: #28a745; }
-        .heading-chua-co { border-color: #f39c12; color: #f39c12; }
+        /* Styles cho Bảng */
+        .table-section { margin-bottom: 24px; }
+        .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .section-heading h3 { margin: 0; font-size: 0.95em; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        .heading-co-diem h3 { color: var(--success); }
+        .heading-chua-co h3 { color: var(--warning); }
         
-        .table-container { max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        .table-container { 
+            max-height: 280px; overflow-y: auto; 
+            border: 1px solid var(--border-color); border-radius: var(--radius-md); 
+            box-shadow: var(--shadow-sm);
+        }
         .table-container::-webkit-scrollbar { width: 6px; }
-        .table-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { background-color: #f8f9fa; color: #333; padding: 10px; border-bottom: 2px solid #dee2e6; text-align: center; font-size: 0.9em; position: sticky; top: 0; z-index: 1;}
-        td { border-bottom: 1px solid #eee; padding: 0; }
-        td input { border: none; padding: 10px 8px; width: 100%; box-sizing: border-box; outline: none; text-align: center; font-size: 0.95em; background: transparent; transition: background 0.2s;}
-        td input:focus { background-color: #f1f8ff; } 
-        td input::placeholder { color: #bbb; }
+        table { width: 100%; border-collapse: collapse; text-align: left;}
+        th { 
+            background-color: var(--bg-body); color: var(--text-muted); 
+            padding: 12px 10px; border-bottom: 1px solid var(--border-color); 
+            font-size: 0.8em; font-weight: 600; text-transform: uppercase; 
+            position: sticky; top: 0; z-index: 1; letter-spacing: 0.5px; text-align: center;
+        }
+        td { border-bottom: 1px solid var(--border-color); padding: 0; }
+        td:first-child input { text-align: left; padding-left: 12px;}
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
         
-        .btn-delete { background-color: #ff4d4f; color: white; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; width: 80%; margin: 4px auto; display: block; transition: background 0.2s; }
-        .btn-delete:hover { background-color: #cf1322; }
+        td input { 
+            border: none; padding: 12px 8px; width: 100%; box-sizing: border-box; 
+            outline: none; text-align: center; font-size: 0.95em; 
+            background: transparent; color: var(--text-main);
+        }
+        td input:focus { background-color: var(--primary-light); } 
+        td input::placeholder { color: #94a3b8; font-style: italic;}
         
-        .btn-add { background: transparent; border: 1px dashed #ccc; width: 100%; padding: 8px; border-radius: 4px; cursor: pointer; color: #777; font-weight: bold; margin-top: 8px; transition: 0.2s; font-size: 0.85em;}
-        .btn-add:hover { border-color: #007BFF; color: #007BFF; background: #f8fbff; }
+        .btn-delete { 
+            background-color: var(--danger-light); color: var(--danger); 
+            padding: 6px 10px; border: none; border-radius: 6px; 
+            cursor: pointer; font-size: 0.8em; font-weight: 600; 
+            width: 80%; margin: 6px auto; display: block; transition: all 0.2s; 
+        }
+        .btn-delete:hover { background-color: var(--danger); color: white; }
+        
+        .btn-add { 
+            background: transparent; border: 1.5px dashed var(--border-color); 
+            width: 100%; padding: 10px; border-radius: var(--radius-md); 
+            cursor: pointer; color: var(--text-muted); font-weight: 600; 
+            margin-top: 10px; transition: 0.2s; font-size: 0.9em;
+        }
+        .btn-add:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-body); }
 
         /* Styles cho Lộ trình cải thiện (Right Column) */
-        .ct-container { max-height: 500px; overflow-y: auto; padding-right: 5px;}
+        .ct-container { max-height: 500px; overflow-y: auto; padding-right: 8px;}
         .ct-container::-webkit-scrollbar { width: 5px; }
-        .ct-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+        .ct-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        .group-cai-thien { margin-bottom: 15px; }
-        .group-title { font-size: 0.9em; font-weight: 800; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase;}
-        .title-rot { background: #ffebeb; color: #dc3545; border-left: 4px solid #dc3545; }
-        .title-d { background: #fff4e5; color: #d35400; border-left: 4px solid #e67e22; }
-        .title-c { background: #eaf4ff; color: #0056b3; border-left: 4px solid #0056b3; }
+        .group-cai-thien { margin-bottom: 20px; }
+        .group-title { font-size: 0.85em; font-weight: 700; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .title-rot { background: var(--danger-light); color: var(--danger); }
+        .title-d { background: var(--warning-light); color: var(--warning); }
+        .title-c { background: var(--primary-light); color: var(--primary); }
 
-        .cai-thien-item { background: #fff; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e8e8e8; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
-        .cai-thien-item label { margin: 0; font-weight: 600; cursor: pointer; display: flex; gap: 8px; align-items: flex-start; color: #333; font-size: 0.9em;}
-        .cai-thien-item select { margin-top: 8px; padding: 5px 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; font-weight: 600; color: #0056b3; font-size: 0.9em;}
-        .empty-msg { font-style: italic; color: #888; text-align: center; padding: 15px 0; border: 1px dashed #ccc; border-radius: 4px; font-size: 0.9em;}
+        .cai-thien-item { 
+            background: #fff; padding: 12px; border-radius: var(--radius-md); 
+            margin-bottom: 10px; border: 1px solid var(--border-color); 
+            box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cai-thien-item:hover { border-color: #cbd5e1; box-shadow: var(--shadow-md); transform: translateY(-1px);}
+        .cai-thien-item label { margin: 0; font-weight: 600; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; color: var(--text-main); font-size: 0.95em;}
+        .cai-thien-item select { 
+            margin-top: 10px; padding: 8px; border-radius: 6px; 
+            border: 1px solid var(--border-color); width: 100%; 
+            font-weight: 600; color: var(--primary); font-size: 0.9em; outline: none;
+            background-color: var(--bg-body); cursor: pointer;
+        }
+        .cai-thien-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light);}
+        .empty-msg { font-style: italic; color: var(--text-muted); text-align: center; padding: 24px 0; border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); font-size: 0.95em; background: var(--bg-body);}
 
-        /* Khối Kết luận & Thống kê Badge */
-        .conclusion-box { margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid #007BFF; }
-        .conclusion-title { margin-top: 0; color: #007BFF; font-size: 1.25em; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
-        .kl-item { margin-bottom: 12px; font-size: 1.05em; line-height: 1.5; color: #444; }
-        .kl-label { font-weight: 800; color: #2c3e50; font-size: 1em; display: inline-block; width: 190px;}
+        /* Khối Kết luận & Thống kê */
+        .conclusion-box { 
+            margin-top: 24px; background: var(--bg-card); padding: 24px; 
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-md); 
+            border: 1px solid var(--border-color);
+            position: relative; overflow: hidden;
+        }
+        .conclusion-box::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--primary);
+        }
         
-        .gpa-high { color: #28a745; font-weight: bold; }
-        .gpa-low { color: #dc3545; font-weight: bold; }
-        .highlight-text { background: #eaf4ff; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #0056b3;}
+        .conclusion-title { margin-top: 0; color: var(--text-main); font-size: 1.3em; font-weight: 800; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+        .kl-item { margin-bottom: 16px; font-size: 1.05em; line-height: 1.6; color: var(--text-main); display: flex; align-items: flex-start; gap: 12px;}
+        .kl-label { font-weight: 700; color: var(--text-muted); font-size: 0.95em; min-width: 180px; padding-top: 2px;}
+        
+        .gpa-high { color: var(--success); font-weight: 800; }
+        .gpa-low { color: var(--danger); font-weight: 800; }
+        .highlight-text { background: var(--primary-light); padding: 2px 8px; border-radius: 6px; font-weight: 700; color: var(--primary);}
 
-        .stat-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;}
-        .badge { padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85em; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
-        .badge-a { background: #28a745; }
-        .badge-b { background: #17a2b8; }
-        .badge-c { background: #ffc107; color: #333; }
-        .badge-d { background: #fd7e14; }
-        .badge-f { background: #dc3545; }
+        .stat-badges { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;}
+        .badge { 
+            padding: 4px 12px; border-radius: 20px; font-weight: 700; 
+            font-size: 0.85em; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .badge-a { background: var(--success-light); color: var(--success); }
+        .badge-b { background: #e0f2fe; color: #0284c7; }
+        .badge-c { background: #fef9c3; color: #a16207; }
+        .badge-d { background: var(--warning-light); color: var(--warning); }
+        .badge-f { background: var(--danger-light); color: var(--danger); }
+        
+        /* Utility */
+        .text-dim { color: var(--text-muted); font-weight: 400; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 class="header-title">Hệ Thống Hoạch Định GPA Chuyên Sâu</h1>
+    <div class="header-title">Hệ Thống Hoạch Định GPA Chuyên Sâu</div>
 
     <div class="layout-wrapper">
         <!-- CỘT TRÁI -->
         <div class="layout-left">
-            <h2>1. THIẾT LẬP MỤC TIÊU</h2>
-            <div style="display: flex; gap: 15px;">
+            <h2>1. Thiết Lập Mục Tiêu</h2>
+            <div style="display: flex; gap: 16px;">
                 <div class="form-group" style="flex: 1;">
-                    <label>Tổng TC bắt buộc của ngành:</label>
+                    <label>Tổng TC bắt buộc của ngành</label>
                     <input type="number" class="input-box" id="tongTCToiThieu" placeholder="VD: 136" oninput="tinhToanAll()">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label>GPA mục tiêu cần đạt (3.0 - 4.0):</label>
+                    <label>GPA mục tiêu cần đạt (Hệ 4.0)</label>
                     <input type="number" class="input-box" step="0.01" id="gpaMucTieu" placeholder="VD: 3.20" oninput="tinhToanAll()">
                 </div>
             </div>
 
             <div class="heading-inline">
-                <h2>2. BẢNG ĐIỂM TÍCH LŨY</h2>
+                <h2>2. Bảng Điểm Tích Lũy</h2>
                 <div class="upload-box">
-                    <label for="uploadExcel" class="upload-label">📁 Tải file Excel</label>
+                    <label for="uploadExcel" class="upload-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Tải file Excel
+                    </label>
                     <input type="file" id="uploadExcel" accept=".xlsx, .xls, .csv" onchange="docFileExcel(event)">
                 </div>
             </div>
@@ -118,7 +241,7 @@
             <!-- BẢNG 1: CÁC MÔN ĐÃ CÓ ĐIỂM -->
             <div class="table-section">
                 <div class="section-heading heading-co-diem">
-                    <h3 style="margin: 0; font-size: 1em;">✅ CÁC MÔN ĐÃ CÓ ĐIỂM (Tính vào GPA)</h3>
+                    <h3><span style="font-size: 1.2em;">✅</span> Các môn đã có điểm (Tính vào GPA)</h3>
                 </div>
                 <div class="table-container">
                     <table id="bangDiemCo">
@@ -139,7 +262,7 @@
             <!-- BẢNG 2: CÁC MÔN CHƯA CÓ ĐIỂM -->
             <div class="table-section" style="margin-bottom: 0;">
                 <div class="section-heading heading-chua-co">
-                    <h3 style="margin: 0; font-size: 1em;">⏳ CÁC MÔN CHƯA CÓ ĐIỂM (Đang học / Dự kiến)</h3>
+                    <h3><span style="font-size: 1.2em;">⏳</span> Các môn chưa có điểm / Đang học</h3>
                 </div>
                 <div class="table-container">
                     <table id="bangDiemChuaCo">
@@ -160,8 +283,8 @@
 
         <!-- CỘT PHẢI -->
         <div class="layout-right">
-            <h2>3. LỘ TRÌNH CẢI THIỆN</h2>
-            <p style="font-size: 0.85em; color: #666; margin-top: -10px; margin-bottom: 15px;">Dữ liệu đã được gộp lấy điểm cao nhất và phân loại theo mức độ ưu tiên.</p>
+            <h2>3. Lộ Trình Cải Thiện</h2>
+            <p style="font-size: 0.9em; color: var(--text-muted); margin-top: -10px; margin-bottom: 20px;">Dữ liệu tự động gộp điểm cao nhất và phân loại ưu tiên.</p>
             
             <div class="ct-container" id="danhSachCaiThien">
                 <div class="empty-msg">Chưa có môn nào cần cải thiện/học lại.</div>
@@ -171,21 +294,21 @@
 
     <!-- KHỐI KẾT LUẬN -->
     <div class="conclusion-box">
-        <h3 class="conclusion-title">📊 BÁO CÁO TỔNG QUAN</h3>
+        <h3 class="conclusion-title">📊 Báo Cáo Tổng Quan</h3>
         
         <div class="kl-item" id="kl-hientai">
             <span class="kl-label">📌 Tình trạng hiện tại:</span> 
-            <span>Chưa có dữ liệu tính toán.</span>
+            <span class="text-dim">Chưa có dữ liệu tính toán.</span>
         </div>
         
         <div class="kl-item" id="kl-muctieu">
             <span class="kl-label">🎯 Lộ trình mục tiêu:</span> 
-            <span>Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1.</span>
+            <span class="text-dim">Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1.</span>
         </div>
         
         <div class="kl-item" id="kl-caithien">
             <span class="kl-label">📈 Sau khi học cải thiện:</span> 
-            <span>Chưa chọn môn cải thiện nào.</span>
+            <span class="text-dim">Chưa chọn môn cải thiện nào.</span>
         </div>
     </div>
 </div>
@@ -196,19 +319,33 @@
         taoDongMoi('ChuaCoDiem'); 
     };
 
-    function taoDongMoi(tableType, ten = "", tc = "", diem = "") {
+    function taoDongMoi(tableType, ten = "", tc = "", diem = "", trangThai = "") {
         let tbodyId = tableType === 'ChuaCoDiem' ? 'tbodyChuaCoDiem' : 'tbodyCoDiem';
         let tbody = document.getElementById(tbodyId);
         let tr = document.createElement("tr");
         tr.dataset.id = "mon_" + Date.now().toString() + Math.floor(Math.random() * 1000); 
 
-        let placeholderDiem = tableType === 'ChuaCoDiem' ? "Đang học" : "Điểm";
-        let inputDiem = tableType === 'ChuaCoDiem' ? `value="" disabled title="Nhập điểm ở bảng trên"` : `value="${diem}" min="0" max="4" step="0.1"`;
+        let typeDiem = tableType === 'ChuaCoDiem' ? "text" : "number";
+        let giaTriTrangThai = trangThai ? trangThai : "Đang học";
+        
+        // CSS xử lý hiển thị có điểm hệ 10
+        let styleChuaCo = "";
+        if (tableType === 'ChuaCoDiem') {
+            if (giaTriTrangThai.includes("hệ 10")) {
+                styleChuaCo = "color: var(--warning); font-weight: 700; background: var(--warning-light); border-radius: 4px;";
+            } else {
+                styleChuaCo = "color: var(--text-muted); font-style: italic;";
+            }
+        }
+
+        let inputDiem = tableType === 'ChuaCoDiem' 
+            ? `value="${giaTriTrangThai}" disabled style="${styleChuaCo}" title="Môn này chưa có điểm hệ 4"` 
+            : `value="${diem}" min="0" max="4" step="0.1" placeholder="Nhập điểm"`;
 
         tr.innerHTML = `
-            <td><input type="text" class="tenMon" oninput="kiemTraVaTinhToan(this)" placeholder="Tên môn..." value="${ten}"></td>
+            <td><input type="text" class="tenMon" oninput="kiemTraVaTinhToan(this)" placeholder="Nhập tên môn học..." value="${ten}"></td>
             <td><input type="number" class="tinChi" min="1" oninput="kiemTraVaTinhToan(this)" placeholder="TC" value="${tc}"></td>
-            <td><input type="number" class="diem4" oninput="kiemTraVaTinhToan(this)" placeholder="${placeholderDiem}" ${inputDiem}></td>
+            <td><input type="${typeDiem}" class="diem4" oninput="kiemTraVaTinhToan(this)" ${inputDiem}></td>
             <td><button class="btn-delete" onclick="xoaDong(this)">Xóa</button></td>
         `;
         tbody.appendChild(tr);
@@ -238,7 +375,9 @@
             document.getElementById("tbodyCoDiem").innerHTML = ""; 
             document.getElementById("tbodyChuaCoDiem").innerHTML = ""; 
 
-            let colTen = 3, colTC = 4, colDiem = 6;
+            let colTen = 3, colTC = 4, colDiem = 6, colDiem10 = -1;
+            
+            // Tìm cột tự động bao gồm hệ 10
             for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
                 let r = jsonData[i];
                 if (r && r.includes("Tên môn học") && r.includes("Số tín chỉ")) {
@@ -246,6 +385,9 @@
                     colTC = r.indexOf("Số tín chỉ");
                     let findDiem = r.indexOf("Điểm TK (4)");
                     if(findDiem !== -1) colDiem = findDiem;
+                    
+                    let findDiem10 = r.findIndex(cell => typeof cell === 'string' && (cell.toLowerCase().includes("hệ 10") || cell.includes("(10)")));
+                    if (findDiem10 !== -1) colDiem10 = findDiem10;
                     break;
                 }
             }
@@ -260,12 +402,17 @@
                 let tenMon = row[colTen];
                 let tinChi = parseFloat(row[colTC]);
                 let diem = parseFloat(row[colDiem]);
+                let diem10 = colDiem10 !== -1 ? parseFloat(row[colDiem10]) : NaN;
 
                 if (tenMon && typeof tenMon === 'string' && tenMon !== "Tên môn học" && !isNaN(tinChi) && tinChi > 0) {
                     let tenKey = taoKeyChuan(tenMon);
                     
                     if (isNaN(diem) || row[colDiem] === "" || row[colDiem] === undefined) {
-                        listChuaCo.push({ ten: tenMon, tc: tinChi });
+                        let trangThaiStr = "Đang học";
+                        if (!isNaN(diem10) && row[colDiem10] !== "") {
+                            trangThaiStr = `Có hệ 10: ${diem10}`;
+                        }
+                        listChuaCo.push({ ten: tenMon, tc: tinChi, trangThai: trangThaiStr });
                     } else {
                         if (!courseMapExcel[tenKey]) {
                             courseMapExcel[tenKey] = { ten: tenMon, tc: tinChi, diem: diem };
@@ -284,7 +431,7 @@
                 taoDongMoi('CoDiem', mon.ten, mon.tc, mon.diem);
             }
             listChuaCo.forEach(mon => {
-                taoDongMoi('ChuaCoDiem', mon.ten, mon.tc, "");
+                taoDongMoi('ChuaCoDiem', mon.ten, mon.tc, "", mon.trangThai);
             });
             
             taoDongMoi('CoDiem');
@@ -305,7 +452,10 @@
             let ten = tr.querySelector('.tenMon').value;
             let tc = tr.querySelector('.tinChi').value;
             let diem = tr.querySelector('.diem4').value;
-            if (ten !== "" || tc !== "" || diem !== "") {
+            
+            let checkDiem = tableType === 'ChuaCoDiem' ? "" : diem;
+
+            if (ten !== "" || tc !== "" || checkDiem !== "") {
                 taoDongMoi(tableType);
             }
         }
@@ -325,7 +475,10 @@
             let ten = lastRow.querySelector('.tenMon').value;
             let tc = lastRow.querySelector('.tinChi').value;
             let diem = lastRow.querySelector('.diem4').value;
-            if (ten !== "" || tc !== "" || diem !== "") {
+            
+            let checkDiem = tableType === 'ChuaCoDiem' ? "" : diem;
+            
+            if (ten !== "" || tc !== "" || checkDiem !== "") {
                 taoDongMoi(tableType);
             }
         }
@@ -369,13 +522,11 @@
         let tongDiem = 0;
         let dsCaiThien = [];
         
-        // Biến đếm tổng kết môn A B C D F
         let countA = 0, countB = 0, countC = 0, countD = 0, countF = 0;
 
         for (let key in courseMap) {
             let mon = courseMap[key];
             if (mon.maxDiem >= 0) {
-                // Thống kê điểm (Áp dụng theo khung chuẩn 4.0 thông dụng)
                 if (mon.maxDiem >= 4.0) countA++;
                 else if (mon.maxDiem >= 3.0) countB++;
                 else if (mon.maxDiem >= 2.0) countC++;
@@ -387,7 +538,6 @@
                     tongDiem += (mon.maxDiem * mon.tc);
                 }
                 
-                // Môn gợi ý cải thiện <= 2.5
                 if (mon.maxDiem <= 2.5) {
                     dsCaiThien.push({ id: mon.id, ten: mon.ten, tc: mon.tc, diem: mon.maxDiem });
                 }
@@ -396,24 +546,20 @@
 
         let gpaHienTai = tongTC > 0 ? (tongDiem / tongTC) : 0;
         
-        // Render khối Báo cáo Hiện tại kèm Thống kê Badge
         document.getElementById("kl-hientai").innerHTML = `
-            <div style="display:flex; align-items:flex-start;">
-                <span class="kl-label">📌 Tình trạng hiện tại:</span> 
-                <div>
-                    Đã tích lũy được <span class="highlight-text">${tongTC} TC</span> với mức GPA là <span class="${gpaHienTai >= 3.0 ? 'gpa-high' : 'gpa-low'}" style="font-size:1.1em;">${gpaHienTai.toFixed(2)}</span>
-                    <div class="stat-badges">
-                        <span class="badge badge-a" title="Điểm A (4.0)">A: ${countA}</span>
-                        <span class="badge badge-b" title="Điểm B (3.0 - 3.9)">B: ${countB}</span>
-                        <span class="badge badge-c" title="Điểm C (2.0 - 2.9)">C: ${countC}</span>
-                        <span class="badge badge-d" title="Điểm D (1.0 - 1.9)">D: ${countD}</span>
-                        <span class="badge badge-f" title="Điểm F (< 1.0)">F (Rớt): ${countF}</span>
-                    </div>
+            <div class="kl-label">📌 Tình trạng hiện tại:</div> 
+            <div style="flex:1;">
+                Đã tích lũy được <span class="highlight-text">${tongTC} TC</span> với mức GPA là <span class="${gpaHienTai >= 3.0 ? 'gpa-high' : 'gpa-low'}" style="font-size:1.2em;">${gpaHienTai.toFixed(2)}</span>
+                <div class="stat-badges">
+                    <span class="badge badge-a" title="Điểm A (4.0)">A: ${countA}</span>
+                    <span class="badge badge-b" title="Điểm B (3.0 - 3.9)">B: ${countB}</span>
+                    <span class="badge badge-c" title="Điểm C (2.0 - 2.9)">C: ${countC}</span>
+                    <span class="badge badge-d" title="Điểm D (1.0 - 1.9)">D: ${countD}</span>
+                    <span class="badge badge-f" title="Điểm F (< 1.0)">F (Rớt): ${countF}</span>
                 </div>
             </div>
         `;
 
-        // Tính Toán Mục Tiêu
         let tongTCToiThieu = parseFloat(document.getElementById("tongTCToiThieu").value);
         let gpaMucTieu = parseFloat(document.getElementById("gpaMucTieu").value);
         let klMucTieu = document.getElementById("kl-muctieu");
@@ -421,25 +567,24 @@
         if (!isNaN(tongTCToiThieu) && !isNaN(gpaMucTieu) && tongTCToiThieu > 0) {
             let tcConLai = tongTCToiThieu - tongTC;
             if (tcConLai <= 0) {
-                klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> <span class="gpa-high">Tuyệt vời! Bạn đã tích lũy đủ số tín chỉ của chương trình.</span>`;
+                klMucTieu.innerHTML = `<div class="kl-label">🎯 Lộ trình mục tiêu:</div> <div style="flex:1;"><span class="gpa-high">Tuyệt vời! Bạn đã tích lũy đủ số tín chỉ của chương trình.</span></div>`;
             } else {
                 let diemCanDat = (gpaMucTieu * tongTCToiThieu) - (gpaHienTai * tongTC);
                 let tcA = diemCanDat - (3 * tcConLai);
                 let tcB = tcConLai - tcA;
 
                 if (tcA > tcConLai) {
-                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> <span class='gpa-low'>Bất khả thi!</span> Dù ${tcConLai} TC còn lại đạt toàn điểm A (4.0) cũng không chạm mốc GPA ${gpaMucTieu}.`;
+                    klMucTieu.innerHTML = `<div class="kl-label">🎯 Lộ trình mục tiêu:</div> <div style="flex:1;"><span class='gpa-low'>Bất khả thi!</span> Dù ${tcConLai} TC còn lại đạt toàn điểm A (4.0) cũng không chạm mốc GPA ${gpaMucTieu}.</div>`;
                 } else if (tcB > tcConLai) {
-                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Rất an toàn! Bạn không nhất thiết phải đạt toàn A hay B trong ${tcConLai} TC còn lại để duy trì GPA ${gpaMucTieu}.`;
+                    klMucTieu.innerHTML = `<div class="kl-label">🎯 Lộ trình mục tiêu:</div> <div style="flex:1;"><span class="gpa-high">Rất an toàn!</span> Bạn không nhất thiết phải đạt toàn A hay B trong ${tcConLai} TC còn lại để duy trì GPA ${gpaMucTieu}.</div>`;
                 } else {
-                    klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Để đạt GPA <b>${gpaMucTieu}</b>, trong <b>${tcConLai}</b> TC còn lại, tối thiểu cần: <span class="highlight-text">${Math.ceil(Math.max(0, tcA))} TC điểm A</span> và <span class="highlight-text">${Math.floor(Math.max(0, tcB))} TC điểm B</span>.`;
+                    klMucTieu.innerHTML = `<div class="kl-label">🎯 Lộ trình mục tiêu:</div> <div style="flex:1;">Để đạt GPA <b>${gpaMucTieu}</b>, trong <b>${tcConLai}</b> TC còn lại, tối thiểu cần: <span class="highlight-text">${Math.ceil(Math.max(0, tcA))} TC điểm A</span> và <span class="highlight-text">${Math.floor(Math.max(0, tcB))} TC điểm B</span>.</div>`;
                 }
             }
         } else {
-            klMucTieu.innerHTML = `<span class="kl-label">🎯 Lộ trình mục tiêu:</span> Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1 để xem chi tiết.`;
+            klMucTieu.innerHTML = `<div class="kl-label">🎯 Lộ trình mục tiêu:</div> <div class="text-dim" style="flex:1;">Vui lòng nhập Tổng TC và GPA mục tiêu ở phần 1 để xem chi tiết.</div>`;
         }
 
-        // ================= XỬ LÝ LỘ TRÌNH CẢI THIỆN =================
         let containerCT = document.getElementById("danhSachCaiThien");
         let trangThaiHienTai = {};
         
@@ -463,13 +608,13 @@
             danhSach.forEach(mon => {
                 let isChecked = trangThaiHienTai[mon.id] && trangThaiHienTai[mon.id].checked ? "checked" : "";
                 let selectedVal = trangThaiHienTai[mon.id] ? trangThaiHienTai[mon.id].diemDuKien : "4";
-                let labelDiem = mon.diem === 0 ? `<span style="color:#dc3545; font-weight:800;">[RỚT]</span>` : `Cao nhất: <b>${mon.diem}</b>`;
+                let labelDiem = mon.diem === 0 ? `<span style="color:var(--danger); font-weight:800;">[RỚT]</span>` : `Cũ: <b>${mon.diem}</b>`;
                 
                 html += `
                     <div class="cai-thien-item">
                         <label>
-                            <input type="checkbox" class="check-cai-thien" data-id="${mon.id}" onchange="tinhToanAll()" ${isChecked} style="margin-top: 2px;">
-                            <div>${mon.ten} <br><small style="color:#777; font-weight: normal;">(${labelDiem} | ${mon.tc} TC)</small></div>
+                            <input type="checkbox" class="check-cai-thien" data-id="${mon.id}" onchange="tinhToanAll()" ${isChecked} style="margin-top: 4px; transform: scale(1.1);">
+                            <div>${mon.ten} <br><span class="text-dim" style="font-size:0.9em; font-weight: 500;">(${labelDiem} &bull; ${mon.tc} TC)</span></div>
                         </label>
                         <select class="select-cai-thien" data-id="${mon.id}" onchange="tinhToanAll()">
                             <option value="4" ${selectedVal === "4" ? "selected" : ""}>Kỳ vọng: A (4.0)</option>
@@ -485,7 +630,7 @@
         }
 
         if (dsCaiThien.length === 0) {
-            htmlOutput = '<div class="empty-msg">Tuyệt vời! Chưa có môn nào cần cải thiện hay học lại.</div>';
+            htmlOutput = '<div class="empty-msg">Tuyệt vời! Bạn không có môn nào cần học lại hay cải thiện.</div>';
         } else {
             htmlOutput += renderGroup(dsRot, 'title-rot', '❌ Môn Rớt (Điểm F / 0)');
             htmlOutput += renderGroup(dsD, 'title-d', '⚠️ Môn Điểm D (Dưới 2.0)');
@@ -494,7 +639,6 @@
         
         containerCT.innerHTML = htmlOutput;
 
-        // Tính Toán Lộ Trình Cải Thiện
         let klCaiThien = document.getElementById("kl-caithien");
         let diemChenhLechTong = 0;
         let tcChenhLechTong = 0;
@@ -521,12 +665,12 @@
         });
 
         if (loiDiemNhoHon) {
-            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> <span class='gpa-low'>Lỗi! Điểm kỳ vọng phải cao hơn điểm đang có.</span>`;
+            klCaiThien.innerHTML = `<div class="kl-label">📈 Sau học cải thiện:</div> <div style="flex:1;"><span class='gpa-low'>Lỗi! Điểm kỳ vọng phải cao hơn điểm đang có.</span></div>`;
         } else if (coChonCaiThien && (tongTC + tcChenhLechTong) > 0) {
             let gpaDuKien = (tongDiem + diemChenhLechTong) / (tongTC + tcChenhLechTong);
-            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> Nếu đạt kỳ vọng, GPA tổng sẽ nâng lên thành <span class="highlight-text gpa-high" style="font-size:1.1em;">${gpaDuKien.toFixed(2)}</span>`;
+            klCaiThien.innerHTML = `<div class="kl-label">📈 Sau học cải thiện:</div> <div style="flex:1;">Nếu đạt kỳ vọng, GPA tổng sẽ nâng lên thành <span class="highlight-text" style="font-size:1.15em;">${gpaDuKien.toFixed(2)}</span></div>`;
         } else {
-            klCaiThien.innerHTML = `<span class="kl-label">📈 Sau khi học cải thiện:</span> Tích chọn các môn ở cột phải để mô phỏng sự thăng tiến của GPA.`;
+            klCaiThien.innerHTML = `<div class="kl-label">📈 Sau học cải thiện:</div> <div class="text-dim" style="flex:1;">Tích chọn các môn ở cột phải để mô phỏng sự thăng tiến của GPA.</div>`;
         }
     }
 </script>
